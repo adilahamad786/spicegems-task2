@@ -1,7 +1,10 @@
+// Import required functions
 import generateAndAddProductCard from "./templates.js";
+import { discountedPrice, fetchData } from "./utils.js";
 
 // Select body
 const body = document.body;
+
 
 // Header section
 const header = document.createElement('header');
@@ -16,7 +19,7 @@ header.style.cssText = `
     justify-content: space-evenly;
     border-bottom: 1px solid grey;
 `;
-body.append(header)
+body.append(header);
 
 
 // Creating Searchbar with buttons
@@ -43,7 +46,7 @@ searchBox.addEventListener('click', (e) => {
         
             // Sort Products as Price-Low-To-High
             products = products.sort((a, b) => {
-                return currentPrice(a.price, a.discountPercentage) - currentPrice(b.price, b.discountPercentage);
+                return discountedPrice(a.price, a.discountPercentage) - discountedPrice(b.price, b.discountPercentage);
             })
 
             // Clear checked category
@@ -73,32 +76,12 @@ searchBox.addEventListener('click', (e) => {
     }
 })
 
+
 // Creating Topbar filter element
 const filter = document.createElement("select");
 filter.style.padding = "0.2rem 0.5rem";
 filter.style.outline = "none";
 header.append(filter);
-
-filter.addEventListener("change", (e) => {
-    if (e.target.value === "priceLowToHigh") {
-        products = products.sort((a, b) => {
-            return currentPrice(a.price, a.discountPercentage) - currentPrice(b.price, b.discountPercentage);
-        })
-    }
-    else if (e.target.value === "priceHighToLow") {
-        products = products.sort((a, b) => {
-            return currentPrice(b.price, b.discountPercentage) - currentPrice(a.price, a.discountPercentage);
-        })
-    }
-    else if (e.target.value === "ratingHighToLow") {
-        products = products.sort((a, b) => {
-            return b.rating - a.rating;
-        })
-    }
-
-    const productCards = products.reduce((cards, card) => cards + generateAndAddProductCard(card), "");
-    productSection.innerHTML = productCards;
-})
 
 // Price Low to High option 
 const priceLowToHigh = document.createElement('option');
@@ -117,6 +100,28 @@ const ratingHighToLow = document.createElement('option');
 ratingHighToLow.textContent = "Rating High to Low";
 ratingHighToLow.value = "ratingHighToLow";
 filter.append(ratingHighToLow);
+
+// Adding event listener for filter
+filter.addEventListener("change", (e) => {
+    if (e.target.value === "priceLowToHigh") {
+        products = products.sort((a, b) => {
+            return discountedPrice(a.price, a.discountPercentage) - discountedPrice(b.price, b.discountPercentage);
+        })
+    }
+    else if (e.target.value === "priceHighToLow") {
+        products = products.sort((a, b) => {
+            return discountedPrice(b.price, b.discountPercentage) - discountedPrice(a.price, a.discountPercentage);
+        })
+    }
+    else if (e.target.value === "ratingHighToLow") {
+        products = products.sort((a, b) => {
+            return b.rating - a.rating;
+        })
+    }
+
+    const productCards = products.reduce((cards, card) => cards + generateAndAddProductCard(card), "");
+    productSection.innerHTML = productCards;
+})
 
 
 // Creating main secion
@@ -151,31 +156,7 @@ categoryTitle.style.cssText = `
     text-align: center;
     padding: 0.5rem 0rem;
 `;
-sidebar.append(categoryTitle)
-
-
-// Custom GET http request function
-const fetchData = (url, callback) => {
-    const sendRequest = async () => {
-        try {
-            const res = await fetch(url);
-        
-            if (!res.ok) {
-                // Hanlding errors
-                return console.log("Error!")
-            }
-        
-            const data = await res.json();
-            callback(data);
-        } catch (error) {
-            // Handling errors
-            console.log("Error!")
-        }
-    }
-
-    sendRequest();
-}
-
+sidebar.append(categoryTitle);
 
 // Render all categories
 fetchData("https://dummyjson.com/products/categories", (categoryList) => {
@@ -195,7 +176,6 @@ fetchData("https://dummyjson.com/products/categories", (categoryList) => {
     });
 });
 
-
 // Adding event listener for selecting categories
 sidebar.addEventListener('click', (e) => {
     if (e.target.value) {
@@ -209,7 +189,7 @@ sidebar.addEventListener('click', (e) => {
 
             // Sort Products as Price-Low-To-High
             products = products.sort((a, b) => {
-                return currentPrice(a.price, a.discountPercentage) - currentPrice(b.price, b.discountPercentage);
+                return discountedPrice(a.price, a.discountPercentage) - discountedPrice(b.price, b.discountPercentage);
             })
 
             // Auto Select filter as Price-Low-To-High
@@ -219,7 +199,7 @@ sidebar.addEventListener('click', (e) => {
             productSection.innerHTML = productCards;
         })
     }
-})
+});
 
 
 // Product Cards Section
@@ -234,7 +214,6 @@ productSection.style.cssText = `
     // border-radius: 0.5rem;
 `;
 main.append(productSection);
-
 
 // Add event listener for showing and hiding details
 productSection.addEventListener('click', (e) => {
@@ -259,66 +238,7 @@ productSection.addEventListener('click', (e) => {
             visibility: hidden;
         `;
     }
-})
-
-
-// // Creating Product cart
-// function generateAndAddProductCard(data) {
-//     let productCard = `
-//     <div class="productCard">
-//         <div class="productImage">
-//             <img src=${data.thumbnail} alt="productImage">
-//         </div>
-//         <div class="productThumbnails">
-//             ${
-//                 data.images.reduce((elements, url) => {
-//                     return elements + `
-//                     <div class="productThumbnail">
-//                         <img src=${url} alt="thumbnail">
-//                     </div>
-//                     `;
-//                 }, '')
-//             }
-//         </div>
-//         <h3 class="title">${data.title}</h3>
-//         <div class="prices">
-//             <span class="discountPrice">Rs. ${currentPrice(data.price, data.discountPercentage)}</span>
-//             <div class="price">
-//                 <span class="oldPrice">Rs.${data.price}</span>
-//                 <span class="discount">save ${data.discountPercentage}%</span>
-//             </div>
-//         </div>
-//         <div class="rating">
-//             <i class="fa-solid fa-star fa-xs" style="color: ${ 1 <= Math.round(data.rating) ? "#ffc800" : "#444029"};"></i>
-//             <i class="fa-solid fa-star fa-xs" style="color: ${ 2 <= Math.round(data.rating) ? "#ffc800" : "#444029"};"></i>
-//             <i class="fa-solid fa-star fa-xs" style="color: ${ 3 <= Math.round(data.rating) ? "#ffc800" : "#444029"};"></i>
-//             <i class="fa-solid fa-star fa-xs" style="color: ${ 4 <= Math.round(data.rating) ? "#ffc800" : "#444029"};"></i>
-//             <i class="fa-solid fa-star fa-xs" style="color: ${ 5 <= Math.round(data.rating) ? "#ffc800" : "#444029"};"></i>
-//         </div>
-//         <span class="stock">InStock : ${data.stock}</span>
-//         <div class="details">
-//             <div class="item">
-//                 <span>Brand</span>
-//                 <span>${data.brand}</span>
-//             </div>
-//             <div class="item">
-//                 <span>Category</span>
-//                 <span>${data.category}</span>
-//             </div>
-//             <div class="item">
-//                 <span>Description</span>
-//                 <span>${data.description}</span>
-//             </div>
-//             <button class="btn" value="hide">Less Description</button>
-//         </div>
-//         <button class="btn" value="show">Show Description</button>
-//         <button class="btn">Add to cart</button>
-//     </div>
-//     `;
-
-//     // productCard.innerHTML = template;
-//     return productCard;
-// }
+});
 
 
 // Render default home pages products
@@ -328,17 +248,13 @@ const initialCardRender = () => {
         window.products = products;
     
         products = products.sort((a, b) => {
-            return currentPrice(a.price, a.discountPercentage) - currentPrice(b.price, b.discountPercentage);
+            return discountedPrice(a.price, a.discountPercentage) - discountedPrice(b.price, b.discountPercentage);
         })
     
         const productCards = products.reduce((cards, card) => cards + generateAndAddProductCard(card), "");
         productSection.innerHTML = productCards;
-    })
-}
+    });
+};
+
+// Initial product render
 initialCardRender();
-
-
-// Current Price
-const currentPrice = (price, discountPercentage) => {
-    return ((price - (price * (discountPercentage/100))).toFixed(2));
-}
